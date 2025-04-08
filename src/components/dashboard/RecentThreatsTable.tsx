@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, AlertTriangle, Eye, Calendar, Terminal } from 'lucide-react';
+import { Shield, AlertTriangle, Eye, Calendar, Terminal, Filter, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface ThreatItem {
   id: string;
@@ -16,8 +17,12 @@ interface ThreatItem {
 }
 
 const RecentThreatsTable = () => {
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [filter, setFilter] = useState<string | null>(null);
+  
   // This data would typically come from your API
-  const threats: ThreatItem[] = [
+  const [threats, setThreats] = useState<ThreatItem[]>([
     {
       id: 'TH-7829',
       name: 'SolarWinds Supply Chain',
@@ -63,7 +68,14 @@ const RecentThreatsTable = () => {
       source: 'Email Gateway',
       status: 'active'
     }
-  ];
+  ]);
+
+  const filteredThreats = filter 
+    ? threats.filter(threat => 
+        threat.severity === filter || 
+        threat.status === filter || 
+        threat.type.toLowerCase().includes(filter.toLowerCase()))
+    : threats;
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -98,6 +110,100 @@ const RecentThreatsTable = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const refreshThreats = () => {
+    setIsRefreshing(true);
+    
+    // Simulate API call with a timeout
+    setTimeout(() => {
+      // Add a new random threat
+      const newThreatTypes = ['APT Campaign', 'Malware', 'Vulnerability', 'Attack', 'Social Engineering', 'Insider Threat'];
+      const randomType = newThreatTypes[Math.floor(Math.random() * newThreatTypes.length)];
+      
+      const newThreatNames = [
+        'Cobalt Strike Beacon', 
+        'Log4j Exploitation', 
+        'SSH Credential Stuffing', 
+        'DDoS Attack', 
+        'Supply Chain Compromise'
+      ];
+      const randomName = newThreatNames[Math.floor(Math.random() * newThreatNames.length)];
+      
+      const severities: ThreatItem['severity'][] = ['critical', 'high', 'medium', 'low'];
+      const randomSeverity = severities[Math.floor(Math.random() * severities.length)];
+      
+      const sources = ['Threat Intel', 'EDR System', 'Network Monitor', 'External Feed', 'Email Gateway'];
+      const randomSource = sources[Math.floor(Math.random() * sources.length)];
+      
+      const statuses: ThreatItem['status'][] = ['active', 'investigating', 'mitigated'];
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      
+      const newId = `TH-${7834 + Math.floor(Math.random() * 100)}`;
+      
+      const newThreat: ThreatItem = {
+        id: newId,
+        name: randomName,
+        type: randomType,
+        severity: randomSeverity,
+        timestamp: new Date().toISOString(),
+        source: randomSource,
+        status: randomStatus
+      };
+      
+      setThreats(prevThreats => {
+        const updatedThreats = [newThreat, ...prevThreats.slice(0, 4)];
+        return updatedThreats;
+      });
+      
+      setIsRefreshing(false);
+      
+      toast({
+        title: "Threats Updated",
+        description: `New threat detected: ${randomName}`,
+        variant: randomSeverity === 'critical' || randomSeverity === 'high' ? 'destructive' : 'default',
+      });
+    }, 1000);
+  };
+
+  const handleViewDetails = (threat: ThreatItem) => {
+    toast({
+      title: `Threat Details: ${threat.id}`,
+      description: `Viewing detailed information for ${threat.name}`,
+      variant: threat.severity === 'critical' || threat.severity === 'high' ? 'destructive' : 'default',
+    });
+    console.log(`Viewing details for threat: ${threat.id}`);
+  };
+
+  const handleMitigate = (threat: ThreatItem) => {
+    if (threat.status === 'mitigated') {
+      toast({
+        title: "Already Mitigated",
+        description: `This threat has already been mitigated.`,
+        variant: "default",
+      });
+      return;
+    }
+
+    setThreats(prevThreats => 
+      prevThreats.map(t => 
+        t.id === threat.id 
+          ? { ...t, status: 'mitigated' } 
+          : t
+      )
+    );
+    
+    toast({
+      title: "Threat Mitigated",
+      description: `Successfully mitigated threat: ${threat.name}`,
+      variant: "default",
+    });
+    
+    console.log(`Mitigated threat: ${threat.id}`);
+  };
+
+  const handleFilterClick = (filterValue: string) => {
+    setFilter(currentFilter => currentFilter === filterValue ? null : filterValue);
+  };
+
   return (
     <Card className="cyber-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -107,9 +213,65 @@ const RecentThreatsTable = () => {
             Last 24 hours threat activity
           </CardDescription>
         </div>
-        <Shield className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={refreshThreats}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`h-7 w-7 ${filter ? 'bg-cyber-accent/20' : ''}`} 
+            onClick={() => setFilter(null)}
+            disabled={!filter}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
+        <div className="px-4 py-2 border-b border-cyber-light/10 flex flex-wrap gap-2">
+          <Badge 
+            variant="outline" 
+            className={`text-xs cursor-pointer ${filter === 'critical' ? 'bg-cyber-alert/20' : 'bg-transparent'}`}
+            onClick={() => handleFilterClick('critical')}
+          >
+            Critical
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-xs cursor-pointer ${filter === 'high' ? 'bg-cyber-warning/20' : 'bg-transparent'}`}
+            onClick={() => handleFilterClick('high')}
+          >
+            High
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-xs cursor-pointer ${filter === 'active' ? 'bg-cyber-alert/20' : 'bg-transparent'}`}
+            onClick={() => handleFilterClick('active')}
+          >
+            Active
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-xs cursor-pointer ${filter === 'investigating' ? 'bg-cyber-warning/20' : 'bg-transparent'}`}
+            onClick={() => handleFilterClick('investigating')}
+          >
+            Investigating
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-xs cursor-pointer ${filter === 'mitigated' ? 'bg-cyber-success/20' : 'bg-transparent'}`}
+            onClick={() => handleFilterClick('mitigated')}
+          >
+            Mitigated
+          </Badge>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -125,7 +287,7 @@ const RecentThreatsTable = () => {
               </tr>
             </thead>
             <tbody>
-              {threats.map((threat) => (
+              {filteredThreats.map((threat) => (
                 <tr key={threat.id} className="border-b border-cyber-light/5 hover:bg-cyber-light/5">
                   <td className="px-4 py-3 text-xs font-mono">{threat.id}</td>
                   <td className="px-4 py-3">{threat.name}</td>
@@ -144,10 +306,22 @@ const RecentThreatsTable = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7"
+                        onClick={() => handleViewDetails(threat)}
+                        title="View Details"
+                      >
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`h-7 w-7 ${threat.status === 'mitigated' ? 'opacity-50' : ''}`}
+                        onClick={() => handleMitigate(threat)}
+                        title="Mitigate Threat"
+                      >
                         <Terminal className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -158,7 +332,7 @@ const RecentThreatsTable = () => {
           </table>
         </div>
         <div className="px-4 py-2 border-t border-cyber-light/10 flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">Showing 5 of 42 threats</span>
+          <span className="text-xs text-muted-foreground">Showing {filteredThreats.length} of {filter ? threats.length : 42} threats</span>
           <Button variant="link" size="sm" className="text-xs text-cyber-accent">
             View all threats
           </Button>

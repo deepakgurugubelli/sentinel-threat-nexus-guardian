@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, AlertCircle, Info, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 type ThreatLevel = 'critical' | 'high' | 'medium' | 'low';
 
@@ -12,6 +14,8 @@ interface ThreatStatusCardProps {
 }
 
 const ThreatStatusCard: React.FC<ThreatStatusCardProps> = ({ level, count, change }) => {
+  const { toast } = useToast();
+
   const getIcon = () => {
     switch (level) {
       case 'critical':
@@ -46,8 +50,17 @@ const ThreatStatusCard: React.FC<ThreatStatusCardProps> = ({ level, count, chang
     }
   };
 
+  const handleViewDetails = () => {
+    toast({
+      title: `${getTitle()} Details`,
+      description: `Viewing details for ${count} ${level} threat${count !== 1 ? 's' : ''}`,
+      variant: level === 'critical' || level === 'high' ? 'destructive' : 'default',
+    });
+    console.log(`Viewing details for ${count} ${level} threats`);
+  };
+
   return (
-    <Card className="cyber-card">
+    <Card className="cyber-card hover:shadow-md transition-all duration-200 cursor-pointer" onClick={handleViewDetails}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{getTitle()}</CardTitle>
         {getIcon()}
@@ -73,6 +86,18 @@ const ThreatStatusCard: React.FC<ThreatStatusCardProps> = ({ level, count, chang
             )}
           </p>
         )}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mt-2 w-full flex items-center justify-center gap-1 text-xs" 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewDetails();
+          }}
+        >
+          <span>View Details</span>
+          <ExternalLink className="h-3 w-3" />
+        </Button>
       </CardContent>
     </Card>
   );

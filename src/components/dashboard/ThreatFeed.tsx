@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, User, Globe, Terminal, Database, AlertTriangle } from 'lucide-react';
+import { MessageSquare, User, Globe, Terminal, Database, AlertTriangle, RefreshCw } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface ThreatFeedItem {
   id: string;
@@ -13,8 +15,10 @@ interface ThreatFeedItem {
 }
 
 const ThreatFeed: React.FC = () => {
-  // This data would typically come from your API or real-time feed
-  const feedItems: ThreatFeedItem[] = [
+  const { toast } = useToast();
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [feedItems, setFeedItems] = useState<ThreatFeedItem[]>([
     {
       id: 'feed-1',
       type: 'attack',
@@ -71,7 +75,59 @@ const ThreatFeed: React.FC = () => {
       timestamp: '2025-04-08T07:25:18Z',
       source: 'Automated Response'
     },
-  ];
+  ]);
+
+  // Function to refresh the threat feed with simulated new data
+  const refreshFeed = () => {
+    setIsRefreshing(true);
+    
+    // Simulate an API call delay
+    setTimeout(() => {
+      // Generate a new threat entry
+      const newThreatTypes: ThreatFeedItem['type'][] = ['attack', 'intel', 'system', 'user', 'vulnerability'];
+      const randomType = newThreatTypes[Math.floor(Math.random() * newThreatTypes.length)];
+      
+      const newThreatMessages = [
+        'Suspicious outbound connection to known C2 server',
+        'New vulnerability identified in cloud infrastructure',
+        'Unusual data exfiltration pattern detected',
+        'Authentication bypass attempt on admin portal',
+        'Data encryption activity detected on file server'
+      ];
+      const randomMessage = newThreatMessages[Math.floor(Math.random() * newThreatMessages.length)];
+      
+      const sources = ['SIEM Alert', 'Firewall Logs', 'EDR System', 'Threat Intelligence', 'User Report'];
+      const randomSource = sources[Math.floor(Math.random() * sources.length)];
+      
+      const newThreat: ThreatFeedItem = {
+        id: `feed-${Date.now()}`,
+        type: randomType,
+        message: randomMessage,
+        timestamp: new Date().toISOString(),
+        source: randomSource
+      };
+      
+      // Add the new threat to the feed
+      setFeedItems(prevItems => [newThreat, ...prevItems.slice(0, 7)]);
+      setLastRefreshed(new Date());
+      setIsRefreshing(false);
+      
+      toast({
+        title: "Threat Feed Updated",
+        description: "New security event detected and added to the feed.",
+        variant: "default",
+      });
+    }, 1000);
+  };
+
+  // Auto-refresh the feed every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshFeed();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -95,6 +151,15 @@ const ThreatFeed: React.FC = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleItemClick = (item: ThreatFeedItem) => {
+    toast({
+      title: `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} Alert`,
+      description: item.message,
+      variant: item.type === 'attack' || item.type === 'vulnerability' ? 'destructive' : 'default',
+    });
+    console.log(`Viewing details for threat: ${item.id}`);
+  };
+
   return (
     <Card className="cyber-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -104,7 +169,20 @@ const ThreatFeed: React.FC = () => {
             Real-time security events
           </CardDescription>
         </div>
-        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            Updated: {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={refreshFeed}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[400px]">
@@ -112,7 +190,8 @@ const ThreatFeed: React.FC = () => {
             {feedItems.map((item) => (
               <div 
                 key={item.id} 
-                className="flex gap-3 px-4 py-3 border-b border-cyber-light/5 hover:bg-cyber-light/5 data-line"
+                className="flex gap-3 px-4 py-3 border-b border-cyber-light/5 hover:bg-cyber-light/5 data-line cursor-pointer"
+                onClick={() => handleItemClick(item)}
               >
                 <div className="flex-shrink-0 mt-0.5">
                   {getIcon(item.type)}
