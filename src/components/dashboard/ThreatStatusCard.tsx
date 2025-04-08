@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 type ThreatLevel = 'critical' | 'high' | 'medium' | 'low';
 
@@ -15,7 +15,7 @@ const ThreatStatusCard: React.FC<ThreatStatusCardProps> = ({ level, count, chang
   const getIcon = () => {
     switch (level) {
       case 'critical':
-        return <Alert className="h-5 w-5 text-cyber-alert" />;
+        return <AlertTriangle className="h-5 w-5 text-cyber-alert" />;
       case 'high':
         return <AlertCircle className="h-5 w-5 text-cyber-warning" />;
       case 'medium':
