@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle, AlertCircle, Info, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 type ThreatLevel = 'critical' | 'high' | 'medium' | 'low';
 
@@ -15,6 +16,7 @@ interface ThreatStatusCardProps {
 
 const ThreatStatusCard: React.FC<ThreatStatusCardProps> = ({ level, count, change }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const getIcon = () => {
     switch (level) {
@@ -56,7 +58,9 @@ const ThreatStatusCard: React.FC<ThreatStatusCardProps> = ({ level, count, chang
       description: `Viewing details for ${count} ${level} threat${count !== 1 ? 's' : ''}`,
       variant: level === 'critical' || level === 'high' ? 'destructive' : 'default',
     });
-    console.log(`Viewing details for ${count} ${level} threats`);
+    
+    // Navigate to the threats page
+    navigate('/threats');
   };
 
   return (

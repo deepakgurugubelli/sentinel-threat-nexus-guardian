@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
   Shield, AlertTriangle, Activity, Database, 
@@ -31,7 +31,8 @@ const NavItem = ({ icon, label, to, isActive = false }: NavItemProps) => (
 
 const Sidebar = () => {
   // Use the current path to determine which nav item is active
-  const currentPath = window.location.pathname;
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <div className="h-screen w-64 flex flex-col bg-sidebar fixed left-0 top-0 border-r border-cyber-light/10">
@@ -100,10 +101,10 @@ const Sidebar = () => {
       <div className="p-4 border-t border-cyber-light/10">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-cyber-accent/20 flex items-center justify-center">
-            <span className="text-xs font-medium">JS</span>
+            <span className="text-xs font-medium">GD</span>
           </div>
           <div>
-            <p className="text-sm font-medium">John Smith</p>
+            <p className="text-sm font-medium">G Deepak</p>
             <p className="text-xs text-sidebar-foreground/60">Security Analyst</p>
           </div>
         </div>
